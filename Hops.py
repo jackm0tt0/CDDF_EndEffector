@@ -4,6 +4,9 @@ Author: Jack Otto
 """
 from flask import Flask
 import ghhops_server as ghs
+import pickle
+from sklearn.preprocessing import PolynomialFeatures
+import numpy as np
 
 app = Flask(__name__)
 hops: ghs.HopsFlask =ghs.Hops(app)
@@ -12,38 +15,71 @@ hops: ghs.HopsFlask =ghs.Hops(app)
     '/Calibration',
     description='Deploys Calibration Function as Correction Factor for Shooting Robot',
     inputs=[
-        ghs.HopsPoint(
-            'Position', 
-            'P', 
-            'The robot position to shoot from', 
+        ghs.HopsNumber(
+            "pos_x",
+            "pos_x",
+            "position x",
             access=ghs.HopsParamAccess.ITEM
-            ),
-        ghs.HopsPoint(
-            'Target', 
-            'T', 
-            'The target point to shoot at', 
+        ),
+        ghs.HopsNumber(
+            "pos_y",
+            "pos_y",
+            "position y",
             access=ghs.HopsParamAccess.ITEM
-            ),
+        ),
+        ghs.HopsNumber(
+            "pos_z",
+            "pos_z",
+            "position z",
+            access=ghs.HopsParamAccess.ITEM
+        ),
+        ghs.HopsNumber(
+            "target_x",
+            "target_x",
+            "target x",
+            access=ghs.HopsParamAccess.ITEM
+        ),
+        ghs.HopsNumber(
+            "target_y",
+            "target_y",
+            "target y",
+            access=ghs.HopsParamAccess.ITEM
+        ),
+        ghs.HopsNumber(
+            "target_z",
+            "target_z",
+            "target z",
+            access=ghs.HopsParamAccess.ITEM
+        ),        
         ghs.HopsString(
             'FilePath', 
             'filepath', 
             'The place where the correction function is stored', 
             access=ghs.HopsParamAccess.ITEM
-            ),
+            )
         ],
 
     outputs=[
-        ghs.HopsPoint(
-            'Frame', 
-            'F', 
-            'Target Frame', 
-            ghs.HopsParamAccess.ITEM
+        ghs.HopsString(
+            'Debug', 
+            'Debug', 
+            'Debug', 
+            access=ghs.HopsParamAccess.ITEM
             )
         ],
 )
-def applyCorrection(position: ghs.HopsPoint, target: ghs.HopsPoint, filepath: ghs.HopsString):
-    print(position,target,filepath)
-    return position
+def applyCorrection(px,py,pz,tx,ty,tz, filepath: ghs.HopsString):
+    print(px,py,filepath)
+    loaded_model = pickle.load(open(filepath + "calibration_function.pkl", 'rb'))
+    loaded_fitter = pickle.load(open(filepath + "data_fitter.pkl", 'rb'))
+
+    features = np.vstack((px, tz)).T
+    params = loaded_fitter.fit_transform(features)
+
+    objectives = loaded_model.predict(params)
+    objective = float(objectives[0])
+    return "This does not work"
+
 
 
 # @hops.component(    

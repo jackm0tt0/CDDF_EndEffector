@@ -40,6 +40,7 @@ dependencies:
       - packaging==24.1
       - pandas==2.2.2
       - pillow==10.4.0
+      - py-openshowvar==1.1.7
       - pyparsing==3.1.2
       - pyserial==3.5
       - python-dateutil==2.9.0.post0

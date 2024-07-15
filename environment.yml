@@ -1,0 +1,54 @@
+name: cddf
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bzip2=1.0.8=h2bbff1b_6
+  - ca-certificates=2024.7.4=h56e8100_0
+  - expat=2.6.2=hd77b12b_0
+  - libffi=3.4.4=hd77b12b_1
+  - openssl=3.3.1=h2466b09_1
+  - pip=24.0=py312haa95532_0
+  - python=3.12.4=h14ffc60_1
+  - setuptools=69.5.1=py312haa95532_0
+  - sqlite=3.45.3=h2bbff1b_0
+  - tk=8.6.14=h0416ee5_0
+  - ucrt=10.0.22621.0=h57928b3_0
+  - vc=14.2=h2eaa2aa_4
+  - vc14_runtime=14.40.33810=ha82c5b3_20
+  - vs2015_runtime=14.40.33810=h3bf8584_20
+  - wheel=0.43.0=py312haa95532_0
+  - xz=5.4.6=h8cc25b3_1
+  - zlib=1.2.13=h8cc25b3_1
+  - pip:
+      - blinker==1.8.2
+      - click==8.1.7
+      - colorama==0.4.6
+      - contourpy==1.2.1
+      - cycler==0.12.1
+      - flask==3.0.3
+      - fonttools==4.53.1
+      - ghhops-server==1.5.5
+      - itsdangerous==2.2.0
+      - jinja2==3.1.4
+      - joblib==1.4.2
+      - kiwisolver==1.4.5
+      - markupsafe==2.1.5
+      - matplotlib==3.9.1
+      - numpy==2.0.0
+      - opencv-python==4.10.0.84
+      - packaging==24.1
+      - pandas==2.2.2
+      - pillow==10.4.0
+      - pyparsing==3.1.2
+      - pyserial==3.5
+      - python-dateutil==2.9.0.post0
+      - pytz==2024.1
+      - rhino3dm==8.6.1
+      - scikit-learn==1.5.1
+      - scipy==1.14.0
+      - six==1.16.0
+      - threadpoolctl==3.5.0
+      - tzdata==2024.1
+      - werkzeug==3.0.3
+prefix: C:\Users\jackm\miniconda3\envs\cddf

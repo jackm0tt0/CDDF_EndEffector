@@ -8,6 +8,7 @@ import os
 import json
 from Regression import *
 from Serialcom import *
+import RobotControl as rc
 
 def GetSensorDistance()->float:
     read_timeout = 0.1 # seconds
@@ -51,11 +52,7 @@ def Register(capture)->tuple[bool, np.ndarray]:
 def Position(x,y,z,a,b,c)->bool:
     print(f"Positioning Robot", end="")
 
-    ## TODO Replace this block
-    for i in range(5):
-        time.sleep(0.1)
-        print(".", flush= True, end="")
-    ##
+    rc.set_position(a,y,z,a,b,c)
     
     print("Positioning Complete")
     return True
@@ -189,6 +186,10 @@ while connection_attempts< connection_max_attempts:
         if LoadCartridge(): break
     connection_attempts+=1
 
+#connect to robot
+rob_connected, robot_client = rc.connect(ip_address = "'192.168.2.3'", port = 7000)
+if not rob_connected: raise Exception("Not connected to Robot")
+
 
 # 3 for OBS studio
 capture = cv2.VideoCapture(2)
@@ -321,3 +322,4 @@ input("Press any key to close >>")
 capture.release()
 cv2.destroyAllWindows()
 connection.close()
+robot_client.close()

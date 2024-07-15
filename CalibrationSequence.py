@@ -191,7 +191,7 @@ while connection_attempts< connection_max_attempts:
 
 
 # 3 for OBS studio
-capture = cv2.VideoCapture(3)
+capture = cv2.VideoCapture(2)
 isVideoConnected , testframe = capture.read()
 if not isVideoConnected: raise Exception("The video is not setup correctly")
 cv2.imshow("Reference", testframe)

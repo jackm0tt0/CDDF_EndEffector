@@ -1,0 +1,73 @@
+&ACCESS RVP
+DEF FlowControl( )
+
+;---Declarations
+;DECL CHAR MSG
+DECL BOOL MOVING
+DECL E6AXIS MYHOME
+DECL INT MYSTEP
+DECL FRAME MYFRAME
+
+;---Initialisations
+MOVING = TRUE
+
+BAS (#INITMOV, 0)
+BAS (#VEL_CP, 0.4)
+BAS (#VEL_PTP, 20)
+MYHOME = {E6AXIS: A1 90,A2 -90,A3 90,A4 0,A5 15,A6 0}
+MSG = "I"
+STATE = "O"
+MYSTEP = 50
+AVAILABLE = FALSE
+
+;---Instructions
+PTP MYHOME
+
+WHILE MOVING
+   
+   MYFRAME = $NULLFRAME
+   
+  WAIT FOR AVAILABLE
+  
+  AVAILABLE = FALSE
+
+  SWITCH MSG
+    CASE "A"
+      STATE = "L" ;Moving left
+      MYFRAME.Y = -MYSTEP
+      PTP_REL MYFRAME
+      ;LIN_REL MYFRAME ;C_VEL
+      ;WAIT SEC 0
+    CASE "D"
+      STATE = "R" ;Moving right
+      MYFRAME.Y = MYSTEP
+      PTP_REL MYFRAME
+      ;LIN_REL MYFRAME ;C_VEL
+      ;WAIT SEC 0
+    CASE "S"
+      STATE = "D" ;Moving down
+      MYFRAME.Z = -MYSTEP
+      PTP_REL MYFRAME
+      ;LIN_REL MYFRAME ;C_VEL
+      ;WAIT SEC 0
+    CASE "W"
+      STATE = "U" ;Moving up
+      MYFRAME.Z = MYSTEP
+      PTP_REL MYFRAME
+      ;LIN_REL MYFRAME ;C_VEL
+      ;WAIT SEC 0
+    CASE "C"
+      MOVING = FALSE
+      STATE = "P" ;Stopping
+    DEFAULT
+      ; idle
+  ENDSWITCH
+  
+  MSG = "I"
+  ;STATE = "O"
+    
+ENDWHILE
+
+PTP MYHOME
+
+END

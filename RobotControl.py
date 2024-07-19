@@ -36,9 +36,8 @@ def read_position(client)->str:
         return str(mypos_initial)
 
 def compare_position(pos_a, pos_b, tol):
-        print("comparing positions")
+        print(len(pos_a), len(pos_b))
         for a,b in zip(pos_a, pos_b):
-                print(a,b)
                 if a-b > tol: return False
         return True
 
@@ -48,21 +47,25 @@ def set_position(client, Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C)->bool:
         pos = "{" + basic_pos + "}"
         client.write('MyPos', pos, debug=True)
 
-        # Verify the new value of MyPos
-        mypos_new = client.read('MyPos', debug=False)
-        print(f"Updated MyPos: {mypos_new}")
+        print(f" sending position: {pos}")
 
-        # Wait until the robot gets there
-        pos_val = parse_position_string(pos)
+        # Verify the new value of MyPos
+        # mypos_new = client.read('MyPos', debug=False)
+        # print(f"Updated MyPos: {mypos_new}")
+
+        # # Wait until the robot gets there
+        # pos_val = parse_position_string(pos)
         
-        while True:
-                rob_val = parse_position_string(read_position(client))
-                if compare_position(pos_val, rob_val, 0.1): break
-                time.sleep(1)
+        # while True:
+        #         rob_val = parse_position_string(read_position(client))[:6]
+        #         print(rob_val)
+        #         if compare_position(pos_val, rob_val, 0.1): break
+        #         time.sleep(1)
+        time.sleep(10)
         return True
 
-Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C = 1.23, 4.56, 1.23, 4.56, 1.23, 4.56
-basic_pos = "POS: X {:.2f}, Y {:.2f}, Z {:.2f}, A {:.2f}, B {:.2f}, C {:.2f}".format(Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C)
-pos = "{" + basic_pos + "}"
-print(pos)
-print(parse_position_string(pos))
+# Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C = 1.23, 4.56, 1.23, 4.56, 1.23, 4.56
+# basic_pos = "POS: X {:.2f}, Y {:.2f}, Z {:.2f}, A {:.2f}, B {:.2f}, C {:.2f}".format(Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C)
+# pos = "{" + basic_pos + "}"
+# print(pos)
+# print(parse_position_string(pos))

@@ -18,7 +18,8 @@ if connected:
 
     print(target_df.head())
 
-    for i in range(len(target_df)-1):
+    #for i in range(len(target_df)-1):
+    for i in range(1):
         target = target_df.loc[i]
 
         #aim at target

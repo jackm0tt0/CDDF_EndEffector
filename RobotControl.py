@@ -30,7 +30,7 @@ def read_position(client)->str:
 
         # Read the current value of MyPos
         start = time.time()
-        mypos_initial = client.read('POS_ACT_MES', debug=False)
+        mypos_initial = client.read('$POS_ACT', debug=False)
         print(mypos_initial)
 
         return mypos_initial

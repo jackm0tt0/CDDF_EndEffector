@@ -50,18 +50,18 @@ def set_position(client, Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C)->bool:
         print(f" sending position: {pos}")
 
         # Verify the new value of MyPos
-        # mypos_new = client.read('MyPos', debug=False)
-        # print(f"Updated MyPos: {mypos_new}")
+        mypos_new = client.read('MyPos', debug=False)
+        print(f"Updated MyPos: {mypos_new}")
 
-        # # Wait until the robot gets there
-        # pos_val = parse_position_string(pos)
+        # Wait until the robot gets there
+        pos_val = parse_position_string(pos)
         
-        # while True:
-        #         rob_val = parse_position_string(read_position(client))[:6]
-        #         print(rob_val)
-        #         if compare_position(pos_val, rob_val, 0.1): break
-        #         time.sleep(1)
-        time.sleep(10)
+        while True:
+                rob_val = parse_position_string(read_position(client))[:6]
+                print(rob_val)
+                if compare_position(pos_val, rob_val, 0.5): break
+                time.sleep(1)
+        print("Position Reached")
         return True
 
 # Pos_X, Pos_Y,Pos_Z, Pos_A, Pos_B, Pos_C = 1.23, 4.56, 1.23, 4.56, 1.23, 4.56

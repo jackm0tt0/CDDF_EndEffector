@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 import random
 import os
 import json
-from Regression import *
+#from Regression import *
 from Serialcom import *
 import RobotControl as rc
 import time
+import pickle
 
 def GetSensorDistance()->float:
     read_timeout = 0.1 # seconds
@@ -51,10 +52,10 @@ def Register(capture)->tuple[bool, np.ndarray]:
     print("Registration Complete")
     return (True,prevframe)
 
-def Position(x,y,z,a,b,c)->bool:
+def Position(client, x,y,z,a,b,c)->bool:
     print(f"Positioning Robot", end="")
 
-    rc.set_position(a,y,z,a,b,c)
+    rc.set_position(client, x,y,z,a,b,c)
     
     print("Positioning Complete")
     return True
@@ -173,7 +174,7 @@ def Record(capture, prevframe, result_df, save_images = False)->tuple[bool, pd.D
 # 5 Position : directly at target
 # 6 Record : position and calc error
 
-Robot_Enabled = False
+Robot_Enabled = True
 Arduino_Enabled = False
 Camera_Enabled = True
 
@@ -200,12 +201,12 @@ if Arduino_Enabled:
 
 if Robot_Enabled:
     #connect to robot
-    rob_connected, robot_client = rc.connect(ip_address = "'192.168.2.3'", port = 7000)
+    rob_connected, robot_client = rc.connect()
     if not rob_connected: raise Exception("Not connected to Robot")
 
 if Camera_Enabled:
     # 3 for OBS studio
-    capture = cv2.VideoCapture(3)
+    capture = cv2.VideoCapture(2)
     isVideoConnected , testframe = capture.read()
     if not isVideoConnected: raise Exception("The video is not setup correctly")
     cv2.imshow("Reference", testframe)
@@ -239,6 +240,7 @@ while sample_count < len(target_df):
 
     if Robot_Enabled:
         positioned = Position(
+            robot_client,
             target["pos_x"],
             target["pos_y"],
             target["pos_z"],
@@ -258,6 +260,7 @@ while sample_count < len(target_df):
     # 3 Aim : Apply Pitch and Yaw correction
     if Robot_Enabled:
         aimed = Position(
+            robot_client,
             target["pos_x"],
             target["pos_y"],
             target["pos_z"],
@@ -276,6 +279,7 @@ while sample_count < len(target_df):
     # 5 Aim : directly at target
     if Robot_Enabled:
         repositioned = Position(
+            robot_client,
             target["pos_x"],
             target["pos_y"],
             target["pos_z"],
@@ -295,6 +299,7 @@ while sample_count < len(target_df):
                     user_txt = input("Press s to shoot again\nPress r to record again\nPress q to abort program\n>>")
                     if user_txt == "s": 
                         positioned = Position(
+                            robot_client,
                             target["pos_x"],
                             target["pos_y"],
                             target["pos_z"],
@@ -310,6 +315,7 @@ while sample_count < len(target_df):
 
                         # 3 Aim : Apply Pitch and Yaw correction
                         aimed = Position(
+                            robot_client,
                             target["pos_x"],
                             target["pos_y"],
                             target["pos_z"],
@@ -337,9 +343,9 @@ plt.axvline(0, color='black', linewidth=0.5)
 plt.scatter(result_df['imx'], result_df['imy'])
 plt.show(block = False)
 
-data_dir = ROOT + r"\Data/"
+data_dir = ROOT + r"\Data\\"
 data_dump = [target_df, result_df]
-pickle.dump(data_dump, open(data_dir + f"data_{time.ctime()}.pkl", 'wb'))
+pickle.dump(data_dump, open(data_dir + f"data_{time.time()}.pkl", 'ab+'))
 
 # model_dir = ROOT + r"\Models/"
 # FitCalibrationFunction(target_df, result_df, model_dir, mode = "polynomial")
@@ -347,5 +353,5 @@ pickle.dump(data_dump, open(data_dir + f"data_{time.ctime()}.pkl", 'wb'))
 input("Press any key to close >>")
 capture.release()
 cv2.destroyAllWindows()
-connection.close()
-robot_client.close()
+if Arduino_Enabled: connection.close()
+if Robot_Enabled: robot_client.close()

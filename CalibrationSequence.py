@@ -9,19 +9,21 @@ import json
 from Regression import *
 from Serialcom import *
 import RobotControl as rc
+import time
 
 def GetSensorDistance()->float:
     read_timeout = 0.1 # seconds
     num_dist_samples = 10
     num_dist_errors = 0
     tot_dist = 0
-    for i in range(num_dist_samples):      
-        distance_data = connection.read_distance(read_timeout)
-        if distance_data is not None:
-            tot_dist += float(distance_data)
-        else:
-            num_dist_errors+=1
-    try:
+    try:        
+        for i in range(num_dist_samples):      
+            distance_data = connection.read_distance(read_timeout)
+            if distance_data is not None:
+                tot_dist += float(distance_data)
+            else:
+                num_dist_errors+=1
+        
         avg_dist = tot_dist/(num_dist_samples-num_dist_errors)
     except:
         print(f"Distance was not sensed")
@@ -73,7 +75,7 @@ def Shoot()->bool:
     else:
         return True #NOTE this should be false once its working
 
-def Record(capture, prevframe, result_df)->tuple[bool, pd.DataFrame]:
+def Record(capture, prevframe, result_df, save_images = False)->tuple[bool, pd.DataFrame]:
     print("Recording Shot")
     height, width, channels = prevframe.shape
     accumulator = cv2.Mat(np.zeros((height, width), dtype=np.float32))
@@ -108,6 +110,7 @@ def Record(capture, prevframe, result_df)->tuple[bool, pd.DataFrame]:
 
     cv2.imshow("Detection", detection)
     cv2.waitKey(1)
+    if save_images: cv2.imwrite(image_dir + f"detection_{sample_count}.png", detection)
 
     # Find contours
     contours, _ = cv2.findContours(detection, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -140,6 +143,7 @@ def Record(capture, prevframe, result_df)->tuple[bool, pd.DataFrame]:
 
             cv2.imshow('Reference', copy)
             cv2.waitKey(1)
+            if save_images: cv2.imwrite(image_dir + f"contour_{sample_count}.png", copy)
 
             user_correct_detection = input("Is this the correct spot? y|n >>")
             if user_correct_detection == "y":
@@ -169,40 +173,47 @@ def Record(capture, prevframe, result_df)->tuple[bool, pd.DataFrame]:
 # 5 Position : directly at target
 # 6 Record : position and calc error
 
-#establish Serial Connection with Arduino
-port = 'COM9'
-baudrate = 9600
-connection = SerialConnection(port, baudrate)
-connection.open()
-connection.send_string("Hello, Serial Port!")
+Robot_Enabled = False
+Arduino_Enabled = False
+Camera_Enabled = True
 
-#confirm that it is connected
-connection_max_attempts = 3
-connection_attempts = 0
-while connection_attempts< connection_max_attempts:
-    if connection.read_string(1):
-        #load the cartridge
-        input("Press Enter to Insert the Cartridge")
-        if LoadCartridge(): break
-    connection_attempts+=1
+save_images = True
 
-#connect to robot
-rob_connected, robot_client = rc.connect(ip_address = "'192.168.2.3'", port = 7000)
-if not rob_connected: raise Exception("Not connected to Robot")
+if Arduino_Enabled:
+    #establish Serial Connection with Arduino
+    port = 'COM9'
+    baudrate = 9600
+    connection = SerialConnection(port, baudrate)
+    connection.open()
+    connection.send_string("Hello, Serial Port!")
 
 
-# 3 for OBS studio
-capture = cv2.VideoCapture(2)
-isVideoConnected , testframe = capture.read()
-if not isVideoConnected: raise Exception("The video is not setup correctly")
-cv2.imshow("Reference", testframe)
-cv2.waitKey(1)
+    #confirm that it is connected
+    connection_max_attempts = 3
+    connection_attempts = 0
+    while connection_attempts< connection_max_attempts:
+        if connection.read_string(1):
+            #load the cartridge
+            input("Press Enter to Insert the Cartridge")
+            if LoadCartridge(): break
+        connection_attempts+=1
 
-# setup for calibration sequence
-# state = IDLE
+if Robot_Enabled:
+    #connect to robot
+    rob_connected, robot_client = rc.connect(ip_address = "'192.168.2.3'", port = 7000)
+    if not rob_connected: raise Exception("Not connected to Robot")
+
+if Camera_Enabled:
+    # 3 for OBS studio
+    capture = cv2.VideoCapture(3)
+    isVideoConnected , testframe = capture.read()
+    if not isVideoConnected: raise Exception("The video is not setup correctly")
+    cv2.imshow("Reference", testframe)
+    cv2.waitKey(1)
 
 ROOT = os.getcwd()
 target_path = ROOT + r"\Targets\targets_test.json"
+image_dir = ROOT + r"\Images/"
 
 with open(target_path, 'r') as file:
     t_dict = json.loads(file.read())
@@ -226,86 +237,97 @@ while sample_count < len(target_df):
     # 1 Position : aimed directly at target
     target = target_df.loc[sample_count-1]
 
-    positioned = Position(
-        target["pos_x"],
-        target["pos_y"],
-        target["pos_z"],
-        target["target_a"],
-        target["target_b"],
-        target["target_c"],
-    )
-    if not positioned: raise Exception("Positioning Failed")
+    if Robot_Enabled:
+        positioned = Position(
+            target["pos_x"],
+            target["pos_y"],
+            target["pos_z"],
+            target["target_a"],
+            target["target_b"],
+            target["target_c"]
+        )
+        if not positioned: raise Exception("Positioning Failed")
 
     # 2 Register : state before shot
-    registered, prevframe =  Register(capture)
-    if not registered: raise Exception("Registration Failed")
+    if Camera_Enabled:
+        registered, prevframe =  Register(capture)
+        if not registered: raise Exception("Registration Failed")
+
+        if save_images: cv2.imwrite(image_dir + f"prevframe_{sample_count}.png", prevframe)
 
     # 3 Aim : Apply Pitch and Yaw correction
-    aimed = Position(
-        target["pos_x"],
-        target["pos_y"],
-        target["pos_z"],
-        target["pos_a"],
-        target["pos_b"],
-        target["pos_c"],
-    )
-    if not aimed: raise Exception("Aiming Failed")
+    if Robot_Enabled:
+        aimed = Position(
+            target["pos_x"],
+            target["pos_y"],
+            target["pos_z"],
+            target["pos_a"],
+            target["pos_b"],
+            target["pos_c"]
+        )
+        if not aimed: raise Exception("Aiming Failed")
 
     # 4 Shoot : pew pew
-    if not Shoot(): raise Exception("Shooting Failed")
+    if Arduino_Enabled:
+        if not Shoot(): raise Exception("Shooting Failed")
+    else:
+        input("Arduino Disabled taking FAKE SHOT: press enter to proceed >>")
     
     # 5 Aim : directly at target
-    repositioned = Position(
-        target["pos_x"],
-        target["pos_y"],
-        target["pos_z"],
-        target["target_a"],
-        target["target_b"],
-        target["target_c"],
-    )
-    if not repositioned: raise Exception("Repositioning Failed")
+    if Robot_Enabled:
+        repositioned = Position(
+            target["pos_x"],
+            target["pos_y"],
+            target["pos_z"],
+            target["target_a"],
+            target["target_b"],
+            target["target_c"]
+        )
+        if not repositioned: raise Exception("Repositioning Failed")
 
     # 6 Record : position and calc error
-    recorded = False
-    while not recorded:
-        recorded, result_df = Record(capture, prevframe, result_df)
-        if not recorded:
-            while(True):
-                user_txt = input("Press s to shoot again\nPress r to record again\nPress q to abort program\n>>")
-                if user_txt == "s": 
-                    positioned = Position(
-                        target["pos_x"],
-                        target["pos_y"],
-                        target["pos_z"],
-                        target["target_a"],
-                        target["target_b"],
-                        target["target_c"],
-                    )
-                    if not positioned: raise Exception("Positioning Failed")
+    if Camera_Enabled:
+        recorded = False
+        while not recorded:
+            recorded, result_df = Record(capture, prevframe, result_df, save_images)
+            if not recorded:
+                while(True):
+                    user_txt = input("Press s to shoot again\nPress r to record again\nPress q to abort program\n>>")
+                    if user_txt == "s": 
+                        positioned = Position(
+                            target["pos_x"],
+                            target["pos_y"],
+                            target["pos_z"],
+                            target["target_a"],
+                            target["target_b"],
+                            target["target_c"]
+                        )
+                        if not positioned: raise Exception("Positioning Failed")
 
-                    # 2 Register : state before shot
-                    registered, prevframe =  Register(capture)
-                    if not registered: raise Exception("Registration Failed")
+                        # 2 Register : state before shot
+                        registered, prevframe =  Register(capture)
+                        if not registered: raise Exception("Registration Failed")
 
-                    # 3 Aim : Apply Pitch and Yaw correction
-                    aimed = Position(
-                        target["pos_x"],
-                        target["pos_y"],
-                        target["pos_z"],
-                        target["pos_a"],
-                        target["pos_b"],
-                        target["pos_c"],
-                    )
-                    if not aimed: raise Exception("Aiming Failed")
+                        # 3 Aim : Apply Pitch and Yaw correction
+                        aimed = Position(
+                            target["pos_x"],
+                            target["pos_y"],
+                            target["pos_z"],
+                            target["pos_a"],
+                            target["pos_b"],
+                            target["pos_c"],
+                        )
+                        if not aimed: raise Exception("Aiming Failed")
 
-                    print("Shooting Again")
-                    shot = Shoot()
-                    if not shot: raise Exception("Shooting Failed")
-                    break
-                elif user_txt == "r":
-                    print("Recording Again")
-                    break
-                    
+                        print("Shooting Again")
+                        shot = Shoot()
+                        if not shot: raise Exception("Shooting Failed")
+                        break
+                    elif user_txt == "r":
+                        print("Recording Again")
+                        break
+        
+              
 
 print(result_df.head())
 plt.xlim((-1,1))
@@ -315,8 +337,12 @@ plt.axvline(0, color='black', linewidth=0.5)
 plt.scatter(result_df['imx'], result_df['imy'])
 plt.show(block = False)
 
-model_dir = ROOT + r"\Models/"
-FitCalibrationFunction(target_df, result_df, model_dir, mode = "polynomial")
+data_dir = ROOT + r"\Data/"
+data_dump = [target_df, result_df]
+pickle.dump(data_dump, open(data_dir + f"data_{time.ctime()}.pkl", 'wb'))
+
+# model_dir = ROOT + r"\Models/"
+# FitCalibrationFunction(target_df, result_df, model_dir, mode = "polynomial")
 
 input("Press any key to close >>")
 capture.release()

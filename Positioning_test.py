@@ -32,7 +32,7 @@ if connected:
             target["pos_c"]
             )
         
-        time.sleep(4)
+        time.sleep(1)
         #adjust pitch and yaw
         rc.set_position(
             client,
@@ -44,7 +44,7 @@ if connected:
             target["target_c"]
         )
         
-        time.sleep(4)
+        time.sleep(1)
         #aim back at target
         rc.set_position(
             client,

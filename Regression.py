@@ -9,8 +9,12 @@ import os
 
 
 
-def FitCalibrationFunction(df_targets, df_results, filedir, mode = "polynomial"):
-    if mode == "polynomial": FitPoly(df_targets, df_results, filedir)
+def FitCalibrationFunction(df_targets, df_results, filedir, mode = "polynomial", modelname = "model"):
+    if mode == "polynomial": 
+        model,poly = FitPoly(df_targets, df_results, filedir)
+
+    pickle.dump(model, open(filedir + "calibration_function.pkl", 'wb'))
+    pickle.dump(poly, open(filedir + "data_fitter.pkl", 'wb'))
 
 def FitPoly(df_targets, df_results, filedir)->tuple[LinearRegression, np.ndarray]:
     """
@@ -21,7 +25,7 @@ def FitPoly(df_targets, df_results, filedir)->tuple[LinearRegression, np.ndarray
     # Step 1: Generate sample data
 
     np.random.seed(1)
-    X = df_targets['pos_c']
+    X = df_targets['pos_b']
     Y = df_targets['target_dist']
     Z = df_results["imy"]
 
@@ -71,7 +75,11 @@ def FitPoly(df_targets, df_results, filedir)->tuple[LinearRegression, np.ndarray
 
     plt.show(block = False)
 
-    pickle.dump(model, open(filedir + "calibration_function.pkl", 'wb'))
-    pickle.dump(poly, open(filedir + "data_fitter.pkl", 'wb'))
+    return [model, poly]    
 
-
+## Main
+ROOT = os.getcwd()
+data_filepath = "put file path here"
+model_dir = ROOT + r"\Models/"
+target_df, result_df = pickle.load(open(data_filepath, 'rb'))
+FitCalibrationFunction(target_df, result_df, model_dir, mode = "polynomial", modelname = "test_00")
